@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Tracker - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #141b3d;
+            --bg-tertiary: #1a2550;
+            --accent-primary: #00ff87;
+            --accent-secondary: #00d4ff;
+            --accent-danger: #ff4757;
+            --accent-warning: #ffa502;
+            --text-primary: #ffffff;
+            --text-secondary: #8b95c9;
+            --text-muted: #5a6394;
+            --border: #2a3562;
+            --shadow: rgba(0, 255, 135, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 135, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.active {
+            background: rgba(0, 255, 135, 0.1);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px var(--shadow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        .status-indicator.active .status-dot {
+            background: var(--accent-primary);
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .start-btn {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 50px;
+            color: var(--bg-primary);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+
+        .start-btn.active {
+            background: var(--accent-danger);
+        }
+
+        /* Main Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 135, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(0, 255, 135, 0.05);
+            border-color: var(--accent-primary);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Activity List */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(0, 255, 135, 0.05);
+            border-color: var(--accent-primary);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .activity-duration {
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Tasks */
+        .tasks-section {
+            grid-column: 1 / -1;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: rgba(0, 255, 135, 0.05);
+            border-color: var(--accent-primary);
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--accent-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .task-checkbox.checked {
+            background: var(--accent-primary);
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .task-priority {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .task-priority.high {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent-danger);
+        }
+
+        .task-priority.medium {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--accent-warning);
+        }
+
+        .task-priority.low {
+            background: rgba(0, 255, 135, 0.2);
+            color: var(--accent-primary);
+        }
+
+        /* Add Task Form */
+        .add-task-form {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px var(--shadow);
+        }
+
+        .add-task-btn {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-primary);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-task-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--accent-danger);
+        }
+
+        .location-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .location-btn {
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .location-btn:hover {
+            background: rgba(0, 255, 135, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        /* Report Button */
+        .report-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .report-btn:hover {
+            background: rgba(0, 255, 135, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 10px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .start-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0a0e27" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <h1>Work Tracker</h1>
+            </div>
+            <div class="status-bar">
+                <div class="status-indicator" id="wifiStatus">
+                    <span class="status-dot"></span>
+                    <span id="wifiText">Checking WiFi...</span>
+                </div>
+                <div class="status-indicator" id="locationStatus">
+                    <svg width="16" height="16" fill="currentColor">
+                        <circle cx="8" cy="8" r="2"/>
+                        <path d="M8 2a6 6 0 0 0-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 0 0-6-6z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span id="locationText">Location: Unknown</span>
+                </div>
+                <div class="status-indicator">
+                    <svg width="16" height="16" fill="currentColor">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <select id="projectSelect" style="background: transparent; border: none; color: inherit; font-weight: 600; cursor: pointer; outline: none;">
+                        <option value="General">General</option>
+                        <option value="Project Alpha">Project Alpha</option>
+                        <option value="Project Beta">Project Beta</option>
+                    </select>
+                </div>
+                <button class="start-btn" id="startBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start Tracking
+                </button>
+                <button class="report-btn" id="reportBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Generate Report
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="todayHours">0h</div>
+                <div class="stat-label">Today's Work</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="weekHours">0h</div>
+                <div class="stat-label">This Week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="tasksCompleted">0</div>
+                <div class="stat-label">Tasks Done</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Activity Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="20" x2="12" y2="10"/>
+                            <line x1="18" y1="20" x2="18" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="16"/>
+                        </svg>
+                        Weekly Activity
+                    </h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        Recent Activity
+                    </h2>
+                </div>
+                <div class="activity-list" id="activityList">
+                    <!-- Activity items will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Section -->
+        <div class="card tasks-section">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Tasks
+                </h2>
+            </div>
+            <div id="tasksList">
+                <!-- Tasks will be added here -->
+            </div>
+            <div class="add-task-form">
+                <input type="text" class="task-input" id="taskInput" placeholder="Add a new task...">
+                <select class="task-input" id="taskPriority" style="max-width: 150px;">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <button class="add-task-btn" id="addTaskBtn">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Select Work Location</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="location-options">
+                <button class="location-btn" data-location="home">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Work from Home
+                </button>
+                <button class="location-btn" data-location="client">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Client Site
+                </button>
+                <button class="location-btn" data-location="other">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    Other Location
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Connected to Azure backend
+        const BACKEND_URL = 'https://worktracker-api-joshua123-hzd0fzepcpb9cuec.centralindia-01.azurewebsites.net';
+        const OFFICE_WIFI = 'GND-4'; // Your office WiFi name
+
+        // State
+        let isTracking = false;
+        let currentLocation = 'unknown';
+        let currentProject = 'General';
+        let trackingInterval = null;
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let projects = ['General', 'Project Alpha', 'Project Beta'];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkWiFi();
+            loadTasks();
+            loadActivityData();
+            updateStats();
+            initChart();
+            setupEventListeners();
+        });
+
+        // WiFi Detection
+        async function checkWiFi() {
+            const wifiStatus = document.getElementById('wifiStatus');
+            const wifiText = document.getElementById('wifiText');
+            const locationText = document.getElementById('locationText');
+
+            try {
+                // Check network connection
+                if (!navigator.onLine) {
+                    wifiText.textContent = 'Offline';
+                    return;
+                }
+
+                // Try to detect WiFi name (limited in browsers, works better in Electron/PWA)
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                
+                // Simulate office WiFi detection (in production, this would come from backend)
+                const isOfficeNetwork = await checkOfficeNetwork();
+                
+                if (isOfficeNetwork) {
+                    wifiText.textContent = `Connected: ${OFFICE_WIFI}`;
+                    wifiStatus.classList.add('active');
+                    currentLocation = 'office';
+                    locationText.textContent = 'Location: Office';
+                } else {
+                    wifiText.textContent = 'WiFi: Not Office Network';
+                    wifiStatus.classList.remove('active');
+                }
+            } catch (error) {
+                console.error('WiFi check error:', error);
+                wifiText.textContent = 'WiFi: Unknown';
+            }
+        }
+
+        async function checkOfficeNetwork() {
+            // In a real implementation, you would:
+            // 1. Get the public IP or network info
+            // 2. Send it to your backend
+            // 3. Backend checks if it matches office network
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/check-network`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timestamp: Date.now() })
+                });
+                const data = await response.json();
+                return data.isOffice;
+            } catch (error) {
+                // Fallback for demo
+                return false;
+            }
+        }
+
+        // Start/Stop Tracking
+        function setupEventListeners() {
+            const startBtn = document.getElementById('startBtn');
+            const reportBtn = document.getElementById('reportBtn');
+            const closeModal = document.getElementById('closeModal');
+            const locationButtons = document.querySelectorAll('.location-btn');
+            const addTaskBtn = document.getElementById('addTaskBtn');
+            const taskInput = document.getElementById('taskInput');
+
+            startBtn.addEventListener('click', toggleTracking);
+            reportBtn.addEventListener('click', generateReport);
+            closeModal.addEventListener('click', () => {
+                document.getElementById('locationModal').classList.remove('active');
+            });
+
+            locationButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentLocation = btn.dataset.location;
+                    document.getElementById('locationText').textContent = `Location: ${capitalize(currentLocation)}`;
+                    document.getElementById('locationModal').classList.remove('active');
+                    startTracking();
+                });
+            });
+
+            addTaskBtn.addEventListener('click', addTask);
+            taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
+        }
+
+        async function toggleTracking() {
+            const startBtn = document.getElementById('startBtn');
+            
+            if (!isTracking) {
+                // Check WiFi first
+                await checkWiFi();
+                
+                if (currentLocation === 'office') {
+                    // Auto-start for office
+                    startTracking();
+                } else {
+                    // Show location modal
+                    document.getElementById('locationModal').classList.add('active');
+                }
+            } else {
+                stopTracking();
+            }
+        }
+
+        function startTracking() {
+            isTracking = true;
+            const startBtn = document.getElementById('startBtn');
+            const locationStatus = document.getElementById('locationStatus');
+            
+            startBtn.classList.add('active');
+            startBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16"/>
+                    <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+                Stop Tracking
+            `;
+            locationStatus.classList.add('active');
+
+            // Send start event to backend
+            sendTrackingEvent('start');
+
+            // Start periodic tracking (every 5 minutes)
+            trackingInterval = setInterval(() => {
+                sendTrackingEvent('heartbeat');
+            }, 5 * 60 * 1000);
+
+            addActivityItem('Started tracking', 'work');
+        }
+
+        function stopTracking() {
+            isTracking = false;
+            const startBtn = document.getElementById('startBtn');
+            const locationStatus = document.getElementById('locationStatus');
+            
+            startBtn.classList.remove('active');
+            startBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Start Tracking
+            `;
+            locationStatus.classList.remove('active');
+
+            // Send stop event to backend
+            sendTrackingEvent('stop');
+
+            // Clear interval
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+            }
+
+            addActivityItem('Stopped tracking', 'break');
+        }
+
+        async function sendTrackingEvent(eventType) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/track`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: eventType,
+                        location: currentLocation,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent
+                    })
+                });
+                const data = await response.json();
+                console.log('Tracking event sent:', data);
+            } catch (error) {
+                console.error('Error sending tracking event:', error);
+            }
+        }
+
+        // Tasks Management
+        function loadTasks() {
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const taskEl = document.createElement('div');
+                taskEl.className = 'task-item';
+                taskEl.innerHTML = `
+                    <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-index="${index}"></div>
+                    <div class="task-content">
+                        <div class="task-title" style="${task.completed ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${task.title}</div>
+                        <div class="task-meta">${task.date}</div>
+                    </div>
+                    <div class="task-priority ${task.priority}">${task.priority}</div>
+                `;
+
+                taskEl.querySelector('.task-checkbox').addEventListener('click', () => toggleTask(index));
+                tasksList.appendChild(taskEl);
+            });
+
+            updateStats();
+        }
+
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const taskPriority = document.getElementById('taskPriority');
+            const title = taskInput.value.trim();
+
+            if (!title) return;
+
+            const task = {
+                title,
+                priority: taskPriority.value,
+                completed: false,
+                date: new Date().toLocaleString()
+            };
+
+            tasks.push(task);
+            saveTasks();
+            loadTasks();
+            taskInput.value = '';
+
+            addActivityItem(`Added task: ${title}`, 'task');
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            saveTasks();
+            loadTasks();
+
+            if (tasks[index].completed) {
+                addActivityItem(`Completed: ${tasks[index].title}`, 'complete');
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Activity Feed
+        function addActivityItem(name, type) {
+            const activityList = document.getElementById('activityList');
+            const now = new Date();
+            
+            const icons = {
+                work: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+                break: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+                task: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+                complete: '<polyline points="20 6 9 17 4 12"/>'
+            };
+
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e27" stroke-width="2">
+                        ${icons[type] || icons.work}
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-name">${name}</div>
+                    <div class="activity-time">${now.toLocaleTimeString()}</div>
+                </div>
+                <div class="activity-duration">${Math.floor(Math.random() * 60)}m</div>
+            `;
+
+            activityList.insertBefore(item, activityList.firstChild);
+
+            // Keep only last 10 items
+            while (activityList.children.length > 10) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        // Stats
+        function updateStats() {
+            const completedTasks = tasks.filter(t => t.completed).length;
+            document.getElementById('tasksCompleted').textContent = completedTasks;
+            
+            // Simulate hours (in production, get from backend)
+            const todayHours = Math.floor(Math.random() * 8) + 1;
+            const weekHours = Math.floor(Math.random() * 40) + 10;
+            
+            document.getElementById('todayHours').textContent = `${todayHours}h`;
+            document.getElementById('weekHours').textContent = `${weekHours}h`;
+        }
+
+        // Chart
+        function initChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Hours Worked',
+                        data: [7, 8, 6, 9, 7, 4, 2],
+                        backgroundColor: 'rgba(0, 255, 135, 0.2)',
+                        borderColor: '#00ff87',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#2a3562' },
+                            ticks: { color: '#8b95c9' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8b95c9' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Report
+        async function generateReport() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        endDate: new Date().toISOString()
+                    })
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `work-report-${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                addActivityItem('Generated work report', 'complete');
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Please try again.');
+            }
+        }
+
+        function loadActivityData() {
+            // Simulate loading activity data
+            setTimeout(() => {
+                addActivityItem('Code Review - Project Alpha', 'work');
+            }, 500);
+            setTimeout(() => {
+                addActivityItem('Meeting with Team', 'work');
+            }, 1000);
+            setTimeout(() => {
+                addActivityItem('Documentation Update', 'work');
+            }, 1500);
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // Periodic WiFi check
+        setInterval(checkWiFi, 60000); // Check every minute
+    </script>
+</body>
+</html>
